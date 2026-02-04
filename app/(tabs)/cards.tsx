@@ -1,11 +1,30 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 
 import ParcelCard from '@/components/ParcelCard';
 import { Colors } from '@/constants/Colors';
+import { useBilling } from '@/context/BillingContext';
+import { usePresence } from '@/hooks/usePresence';
+
+const KNOWN_CARDS = [
+  { id: 101, cardNumber: '101' },
+  { id: 1, cardNumber: '001' },
+  { id: 2, cardNumber: '002' },
+];
 
 export default function CardsScreen() {
+  const knownIds = useMemo(() => KNOWN_CARDS.map(c => c.id), []);
+  const { onlineCards, isConnected, lastUpdated } = usePresence(knownIds);
+  const { getEstimatedBill, cardSessions } = useBilling();
+
+  // Force re-render to update timer?
+  const [tick, setTick] = React.useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 10000); // Update UI every 10s for billing
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -27,23 +46,38 @@ export default function CardsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <ParcelCard
-          id="1"
-          cardNumber="8"
-          status="Outside"
-          penalty="$0.20 penalty"
-        />
-        <ParcelCard
-          id="2"
-          cardNumber="15"
-          status="In Store"
-        />
-        <ParcelCard
-          id="3"
-          cardNumber="23"
-          status="Outside"
-          penalty="$1.50 penalty"
-        />
+        {KNOWN_CARDS.map((card) => {
+          const isOnline = onlineCards.includes(card.id);
+          const estimatedBill = !isOnline ? getEstimatedBill(card.id) : 0;
+          const penaltyText = estimatedBill > 0
+            ? `$${estimatedBill.toFixed(2)} penalty`
+            : (!isOnline ? 'In Grace Period' : undefined);
+
+          return (
+            <ParcelCard
+              key={card.id}
+              id={card.id.toString()}
+              cardNumber={card.cardNumber}
+              status={isOnline ? 'In Store' : 'Outside'}
+              penalty={penaltyText}
+            />
+          );
+        })}
+
+        {KNOWN_CARDS.length === 0 && (
+          <Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>No cards configured.</Text>
+        )}
+
+        <View style={{ marginTop: 20, padding: 10, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 8 }}>
+          <Text style={{ textAlign: 'center', color: '#666', fontSize: 12 }}>
+            Status: {isConnected ? 'Connected to Gateway' : 'Connecting to Gateway...'}
+          </Text>
+          {lastUpdated && (
+            <Text style={{ textAlign: 'center', color: '#888', fontSize: 10, marginTop: 4 }}>
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </Text>
+          )}
+        </View>
       </ScrollView>
     </View>
   );

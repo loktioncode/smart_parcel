@@ -5,12 +5,32 @@ import React, { useState } from 'react';
 import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { Theme } from '@/constants/Theme';
+import { useBilling } from '@/context/BillingContext';
 
 export default function SettingsScreen() {
-    const [gracePeriod, setGracePeriod] = useState('10');
-    const [penaltyRate, setPenaltyRate] = useState('0.1');
+    const { settings, updateSettings } = useBilling();
+
+    // We keep local state for inputs to avoid jitter, sync on blur/save?
+    // Or just direct update. Let's do direct update for simplicity, OR local state + Save button.
+    // The UI has a Save button. So local state -> Save.
+    const [gracePeriod, setGracePeriod] = useState(settings.gracePeriod.toString());
+    const [penaltyRate, setPenaltyRate] = useState(settings.penaltyRate.toString());
     const [soundAlerts, setSoundAlerts] = useState(true);
     const [autoRefresh, setAutoRefresh] = useState(true);
+
+    // Sync from context on mount
+    React.useEffect(() => {
+        setGracePeriod(settings.gracePeriod.toString());
+        setPenaltyRate(settings.penaltyRate.toString());
+    }, [settings]);
+
+    const handleSave = () => {
+        updateSettings({
+            gracePeriod: parseFloat(gracePeriod) || 0,
+            penaltyRate: parseFloat(penaltyRate) || 0,
+        });
+        // Feedback could be added here
+    };
 
     return (
         <View style={styles.container}>
@@ -127,7 +147,7 @@ export default function SettingsScreen() {
                 </View>
 
                 {/* Save Button */}
-                <TouchableOpacity style={styles.saveButton}>
+                <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                     <Save size={20} color="#FFF" style={{ marginRight: 8 }} />
                     <Text style={styles.saveButtonText}>Save Settings</Text>
                 </TouchableOpacity>
