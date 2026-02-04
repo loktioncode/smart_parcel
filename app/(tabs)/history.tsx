@@ -1,13 +1,82 @@
 import { Colors } from '@/constants/Colors';
+import { HistoryEvent, useBilling } from '@/context/BillingContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Clock, DollarSign, Plus } from 'lucide-react-native';
-import React from 'react';
-import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ArrowLeftCircle, ArrowRightCircle, Clock, DollarSign, Plus } from 'lucide-react-native';
+import React, { useMemo } from 'react';
+import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import AlertItem from '@/components/AlertItem';
 import { Theme } from '@/constants/Theme';
 
+// Helper to format timestamp
+const formatTime = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+};
+
+// Helper to format duration
+const formatDuration = (minutes: number): string => {
+    if (minutes < 1) return 'Less than 1 min';
+    if (minutes < 60) return `${Math.round(minutes)} min`;
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
+    return `${hours}h ${mins}m`;
+};
+
 export default function HistoryScreen() {
+    const { history, clearHistory } = useBilling();
+
+    // Calculate stats
+    const stats = useMemo(() => {
+        const totalEvents = history.length;
+        const totalPenalties = history
+            .filter(e => e.type === 'returned' && e.penalty)
+            .reduce((sum, e) => sum + (e.penalty || 0), 0);
+        return { totalEvents, totalPenalties };
+    }, [history]);
+
+    const renderHistoryItem = (event: HistoryEvent) => {
+        const isLeft = event.type === 'left';
+        const isReturned = event.type === 'returned';
+        const color = isLeft ? Colors.warning : (isReturned ? Colors.success : Colors.info);
+
+        return (
+            <View key={event.id} style={styles.historyItem}>
+                <View style={[styles.indicator, { backgroundColor: color }]} />
+                <View style={styles.iconContainer}>
+                    {isLeft && <ArrowRightCircle size={24} color={color} />}
+                    {isReturned && <ArrowLeftCircle size={24} color={color} />}
+                    {event.type === 'registered' && <Plus size={24} color={color} />}
+                </View>
+                <View style={styles.itemContent}>
+                    <Text style={styles.cardText}>
+                        Card <Text style={styles.bold}>#{event.cardId}</Text>
+                    </Text>
+                    <Text style={styles.subText}>
+                        {isLeft && 'Left the store'}
+                        {isReturned && (
+                            event.penalty
+                                ? `Returned - $${event.penalty.toFixed(2)} penalty`
+                                : `Returned (within grace period)`
+                        )}
+                        {event.type === 'registered' && 'Card registered'}
+                    </Text>
+                    {isReturned && event.durationMinutes && (
+                        <Text style={styles.durationText}>
+                            Outside for {formatDuration(event.durationMinutes)}
+                        </Text>
+                    )}
+                    <Text style={styles.timeText}>{formatTime(event.timestamp)}</Text>
+                </View>
+            </View>
+        );
+    };
+
     return (
         <View style={styles.container}>
             {/* Header */}
@@ -30,14 +99,14 @@ export default function HistoryScreen() {
                                 <Clock size={16} color={Colors.primary} />
                                 <Text style={styles.statLabel}>Total Events</Text>
                             </View>
-                            <Text style={styles.statValue}>14</Text>
+                            <Text style={styles.statValue}>{stats.totalEvents}</Text>
                         </View>
                         <View style={[styles.headerStat, { borderLeftWidth: 4, borderLeftColor: Colors.success }]}>
                             <View style={styles.statHeader}>
                                 <DollarSign size={16} color={Colors.success} />
                                 <Text style={styles.statLabel}>Total Penalties</Text>
                             </View>
-                            <Text style={styles.statValue}>$10.50</Text>
+                            <Text style={styles.statValue}>${stats.totalPenalties.toFixed(2)}</Text>
                         </View>
                     </View>
                 </SafeAreaView>
@@ -47,65 +116,26 @@ export default function HistoryScreen() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.sectionTitle}>Activity Timeline</Text>
-
-                {/* We can reuse AlertItem or build custom ones for different event types. 
-            For now, reusing AlertItem for consistency where applicable, 
-            but the screenshot shows different icons/colors for registration. 
-            I'll mock the specific look with AlertItem or just custom views here.
-        */}
-
-                {/* Mocking the "Card Registered" item manually to match screenshot perfectly or just use AlertItem if adaptable. 
-           AlertItem is specific to Left/Returned. Let's make a generic HistoryItem properly in the future, 
-           but for now I'll stick to AlertItem for the alerts and custom view for registration to match screenshot style.
-        */}
-
-                <View style={styles.historyItem}>
-                    <View style={[styles.indicator, { backgroundColor: Colors.info }]} />
-                    <View style={styles.iconContainer}>
-                        <Plus size={24} color={Colors.info} />
-                    </View>
-                    <View style={styles.itemContent}>
-                        <Text style={styles.cardText}>Card <Text style={styles.bold}>#15</Text></Text>
-                        <Text style={styles.subText}>Card registered</Text>
-                        <Text style={styles.timeText}>Jan 29, 2026, 02:06 PM</Text>
-                    </View>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Activity Timeline</Text>
+                    {history.length > 0 && (
+                        <TouchableOpacity onPress={clearHistory}>
+                            <Text style={styles.clearButton}>Clear</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
 
-                <AlertItem
-                    id="1"
-                    type="left"
-                    cardNumber="23"
-                    time="Jan 29, 2026, 02:46 PM"
-                />
-
-                <AlertItem
-                    id="2"
-                    type="left"
-                    cardNumber="12"
-                    time="Jan 29, 2026, 02:21 PM"
-                />
-
-                <AlertItem
-                    id="3"
-                    type="returned"
-                    cardNumber="12"
-                    time="Jan 29, 2026, 02:51 PM"
-                    penalty="$3.50"
-                />
-
-                <View style={styles.historyItem}>
-                    <View style={[styles.indicator, { backgroundColor: Colors.info }]} />
-                    <View style={styles.iconContainer}>
-                        <Plus size={24} color={Colors.info} />
+                {history.length === 0 ? (
+                    <View style={styles.emptyState}>
+                        <Clock size={48} color={Colors.textSecondary} />
+                        <Text style={styles.emptyTitle}>No Activity Yet</Text>
+                        <Text style={styles.emptyText}>
+                            Events will appear here when cards leave or return to the store.
+                        </Text>
                     </View>
-                    <View style={styles.itemContent}>
-                        <Text style={styles.cardText}>Card <Text style={styles.bold}>#8</Text></Text>
-                        <Text style={styles.subText}>Card registered</Text>
-                        <Text style={styles.timeText}>Jan 29, 2026, 01:06 PM</Text>
-                    </View>
-                </View>
-
+                ) : (
+                    history.map(renderHistoryItem)
+                )}
             </ScrollView>
         </View>
     );
@@ -169,13 +199,23 @@ const styles = StyleSheet.create({
     scrollContent: {
         padding: 24,
     },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
     sectionTitle: {
         fontSize: 18,
         fontWeight: '600',
         color: Colors.text,
-        marginBottom: 16,
     },
-    // Custom History Item Styles
+    clearButton: {
+        fontSize: 14,
+        color: Colors.primary,
+        fontWeight: '500',
+    },
+    // History Item Styles
     historyItem: {
         backgroundColor: Colors.card,
         borderRadius: Theme.borderRadius.lg,
@@ -211,8 +251,32 @@ const styles = StyleSheet.create({
         color: Colors.text,
         marginBottom: 4,
     },
+    durationText: {
+        fontSize: 12,
+        color: Colors.textSecondary,
+        marginBottom: 2,
+    },
     timeText: {
         fontSize: 12,
         color: Colors.textSecondary,
     },
+    // Empty State
+    emptyState: {
+        alignItems: 'center',
+        paddingVertical: 48,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: Colors.text,
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    emptyText: {
+        fontSize: 14,
+        color: Colors.textSecondary,
+        textAlign: 'center',
+        paddingHorizontal: 32,
+    },
 });
+

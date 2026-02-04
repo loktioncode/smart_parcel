@@ -15,7 +15,7 @@ const KNOWN_CARDS = [
 
 export default function CardsScreen() {
   const knownIds = useMemo(() => KNOWN_CARDS.map(c => c.id), []);
-  const { onlineCards, isConnected, lastUpdated } = usePresence(knownIds);
+  const { onlineCards, isConnected, lastUpdated, isOfflineMode } = usePresence(knownIds);
   const { getEstimatedBill, cardSessions } = useBilling();
 
   // Force re-render to update timer?
@@ -68,9 +68,18 @@ export default function CardsScreen() {
           <Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>No cards configured.</Text>
         )}
 
-        <View style={{ marginTop: 20, padding: 10, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 8 }}>
-          <Text style={{ textAlign: 'center', color: '#666', fontSize: 12 }}>
-            Status: {isConnected ? 'Connected to Gateway' : 'Connecting to Gateway...'}
+        <View style={{ marginTop: 20, padding: 10, backgroundColor: isOfflineMode ? 'rgba(255,165,0,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 8 }}>
+          {isOfflineMode && (
+            <Text style={{ textAlign: 'center', color: Colors.warning, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>
+              📱 Demo Mode
+            </Text>
+          )}
+          <Text style={{ textAlign: 'center', color: isOfflineMode ? Colors.warning : '#666', fontSize: 12 }}>
+            {isConnected
+              ? 'Connected to Gateway'
+              : (isOfflineMode
+                ? 'Showing sample data - Connect to ESP32 for live tracking'
+                : 'Connecting to Gateway...')}
           </Text>
           {lastUpdated && (
             <Text style={{ textAlign: 'center', color: '#888', fontSize: 10, marginTop: 4 }}>

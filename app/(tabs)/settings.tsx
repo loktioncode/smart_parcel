@@ -1,14 +1,16 @@
 import { Colors } from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Bell, Clock, DollarSign, RefreshCw, Save } from 'lucide-react-native';
+import { Bell, Clock, DollarSign, Lock, RefreshCw, Save } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { Theme } from '@/constants/Theme';
+import { useAuth } from '@/context/AuthContext';
 import { useBilling } from '@/context/BillingContext';
 
 export default function SettingsScreen() {
     const { settings, updateSettings } = useBilling();
+    const { logout } = useAuth();
 
     // We keep local state for inputs to avoid jitter, sync on blur/save?
     // Or just direct update. Let's do direct update for simplicity, OR local state + Save button.
@@ -150,6 +152,15 @@ export default function SettingsScreen() {
                 <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                     <Save size={20} color="#FFF" style={{ marginRight: 8 }} />
                     <Text style={styles.saveButtonText}>Save Settings</Text>
+                </TouchableOpacity>
+
+                {/* Logout Button */}
+                <TouchableOpacity
+                    style={[styles.saveButton, { backgroundColor: '#F44336', marginTop: 12 }]}
+                    onPress={logout}
+                >
+                    <Lock size={20} color="#FFF" style={{ marginRight: 8 }} />
+                    <Text style={styles.saveButtonText}>Logout Session</Text>
                 </TouchableOpacity>
 
             </ScrollView>

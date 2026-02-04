@@ -6,23 +6,28 @@ export function usePresence(knownCardIds: number[] = []) {
     const [onlineCards, setOnlineCards] = useState<number[]>([]);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [isConnected, setIsConnected] = useState(false);
+    const [isOfflineMode, setIsOfflineMode] = useState(false);
 
     const { handleCardStatusChange } = useBilling();
 
     useEffect(() => {
         let isMounted = true;
         const intervalId = setInterval(async () => {
-            const cards = await fetchActiveCards();
+            const result = await fetchActiveCards();
             if (isMounted) {
                 let currentOnlineIds: number[] = [];
-                if (cards.length > 0) {
-                    currentOnlineIds = cards.map(c => c.id);
+
+                setIsConnected(result.isConnected);
+                setIsOfflineMode(result.isOfflineMode);
+
+                if (result.cards.length > 0) {
+                    // Filter cards that were seen recently (within 5 seconds)
+                    currentOnlineIds = result.cards
+                        .filter(c => c.last_seen_ms_ago < 5000)
+                        .map(c => c.id);
                     setOnlineCards(currentOnlineIds);
-                    setIsConnected(true);
                 } else {
                     setOnlineCards([]);
-                    // We assume disconnected if simple fetch fails, but fetchActiveCards returns [] on error. 
-                    // We might need a better "connected" check, but this is fine for now.
                 }
                 setLastUpdated(new Date());
 
@@ -41,5 +46,5 @@ export function usePresence(knownCardIds: number[] = []) {
         };
     }, [knownCardIds, handleCardStatusChange]); // Re-run if knownIds change (unlikely)
 
-    return { onlineCards, lastUpdated, isConnected };
+    return { onlineCards, lastUpdated, isConnected, isOfflineMode };
 }
