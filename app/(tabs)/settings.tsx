@@ -1,8 +1,10 @@
 import { Colors } from '@/constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Bell, Clock, DollarSign, Lock, RefreshCw, Save } from 'lucide-react-native';
+import { Bell, Clock, DollarSign, RefreshCw, Save } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Theme } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
@@ -159,7 +161,7 @@ export default function SettingsScreen() {
                     style={[styles.saveButton, { backgroundColor: '#F44336', marginTop: 12 }]}
                     onPress={logout}
                 >
-                    <Lock size={20} color="#FFF" style={{ marginRight: 8 }} />
+                    <Ionicons name="lock-closed" size={20} color="#FFF" style={{ marginRight: 8 }} />
                     <Text style={styles.saveButtonText}>Logout Session</Text>
                 </TouchableOpacity>
 

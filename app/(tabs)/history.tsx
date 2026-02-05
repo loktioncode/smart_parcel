@@ -3,7 +3,8 @@ import { HistoryEvent, useBilling } from '@/context/BillingContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeftCircle, ArrowRightCircle, Clock, DollarSign, Plus } from 'lucide-react-native';
 import React, { useMemo } from 'react';
-import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Theme } from '@/constants/Theme';
 

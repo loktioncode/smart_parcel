@@ -1,7 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Clock, CreditCard, DollarSign, MapPin } from 'lucide-react-native';
 import React from 'react';
-import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Platform, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import AlertItem from '@/components/AlertItem';
 import StatCard from '@/components/StatCard';

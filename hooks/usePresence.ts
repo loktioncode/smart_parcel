@@ -1,6 +1,6 @@
 import { useBilling } from '@/context/BillingContext';
 import { useEffect, useState } from 'react';
-import { fetchActiveCards } from '../app/services/EspApi';
+import { fetchActiveCards } from '../services/EspApi';
 
 export function usePresence(knownCardIds: number[] = []) {
     const [onlineCards, setOnlineCards] = useState<number[]>([]);

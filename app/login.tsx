@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Lock } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle, withSequence, withSpring } from 'react-native-reanimated';
@@ -10,13 +10,12 @@ const { width } = Dimensions.get('window');
 
 const PIN_LENGTH = 4;
 
-export default function LoginScreen() {
+const LoginScreen = () => {
     const [pin, setPin] = useState('');
     const [error, setError] = useState(false);
     const { login } = useAuth();
 
     const animatedStyle = useAnimatedStyle(() => {
-        // Simple shake animation when wrong PIN is entered
         return {
             transform: [
                 {
@@ -93,7 +92,7 @@ export default function LoginScreen() {
             <View style={styles.content}>
                 <View style={styles.header}>
                     <View style={styles.logoContainer}>
-                        <Lock color="#FFF" size={40} />
+                        <Ionicons name="lock-closed" color="#FFF" size={40} />
                     </View>
                     <Text style={styles.title}>Smart Parcel</Text>
                     <Text style={styles.subtitle}>Enter 4-digit PIN to unlock</Text>
@@ -113,7 +112,9 @@ export default function LoginScreen() {
             </View>
         </View>
     );
-}
+};
+
+export default LoginScreen;
 
 const styles = StyleSheet.create({
     container: {
