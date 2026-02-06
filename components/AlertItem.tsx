@@ -1,12 +1,12 @@
+import { AlertCircle, CheckCircle2, Info } from 'lucide-react-native';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { CheckCircle2, AlertCircle } from 'lucide-react-native';
-import { Theme } from '../constants/Theme';
+import { StyleSheet, Text, View } from 'react-native';
 import { Colors } from '../constants/Colors';
+import { Theme } from '../constants/Theme';
 
 interface AlertItemProps {
     id: string;
-    type: 'returned' | 'left';
+    type: 'returned' | 'left' | 'registered';
     cardNumber: number | string;
     time: string;
     penalty?: string;
@@ -14,17 +14,29 @@ interface AlertItemProps {
 
 export const AlertItem: React.FC<AlertItemProps> = ({ type, cardNumber, time, penalty }) => {
     const isLeft = type === 'left';
-    const color = isLeft ? Colors.error : Colors.success;
+    const isRegistered = type === 'registered';
+
+    let color = Colors.success;
+    if (isLeft) color = Colors.error;
+    if (isRegistered) color = Colors.info;
+
+    const renderIcon = () => {
+        if (isLeft) return <AlertCircle size={24} color={color} />;
+        if (isRegistered) return <Info size={24} color={color} />;
+        return <CheckCircle2 size={24} color={color} />;
+    };
+
+    const getMessage = () => {
+        if (isLeft) return 'Left the store';
+        if (isRegistered) return 'New card registered';
+        return 'Returned to store';
+    };
 
     return (
         <View style={styles.container}>
             <View style={[styles.indicator, { backgroundColor: color }]} />
             <View style={styles.iconContainer}>
-                {isLeft ? (
-                    <AlertCircle size={24} color={color} />
-                ) : (
-                    <CheckCircle2 size={24} color={color} />
-                )}
+                {renderIcon()}
             </View>
             <View style={styles.content}>
                 <View style={styles.row}>
@@ -32,7 +44,7 @@ export const AlertItem: React.FC<AlertItemProps> = ({ type, cardNumber, time, pe
                     <Text style={styles.time}>{time}</Text>
                 </View>
                 <Text style={styles.message}>
-                    {isLeft ? 'Left the store' : 'Returned to store'}
+                    {getMessage()}
                 </Text>
                 {penalty && (
                     <Text style={[styles.penalty, { color: Colors.success }]}>

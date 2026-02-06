@@ -8,16 +8,14 @@ import { Colors } from '@/constants/Colors';
 import { useBilling } from '@/context/BillingContext';
 import { usePresence } from '@/hooks/usePresence';
 
-const KNOWN_CARDS = [
-  { id: 101, cardNumber: '101' },
-  { id: 1, cardNumber: '001' },
-  { id: 2, cardNumber: '002' },
-];
-
 export default function CardsScreen() {
-  const knownIds = useMemo(() => KNOWN_CARDS.map(c => c.id), []);
+  const { getEstimatedBill, cardSessions, unregisterCard } = useBilling();
+
+  const knownIds = useMemo(() => Object.keys(cardSessions).map(id => parseInt(id, 10)), [cardSessions]);
   const { onlineCards, isConnected, lastUpdated, isOfflineMode } = usePresence(knownIds);
-  const { getEstimatedBill, cardSessions } = useBilling();
+
+  // Convert sessions to array for rendering
+  const cards = useMemo(() => Object.values(cardSessions), [cardSessions]);
 
   // Force re-render to update timer?
   const [tick, setTick] = React.useState(0);
@@ -47,40 +45,48 @@ export default function CardsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {KNOWN_CARDS.map((card) => {
-          const isOnline = onlineCards.includes(card.id);
-          const estimatedBill = !isOnline ? getEstimatedBill(card.id) : 0;
+        {cards.map((card) => {
+          const isOnline = onlineCards.includes(card.cardId);
+          const estimatedBill = !isOnline ? getEstimatedBill(card.cardId) : 0;
           const penaltyText = estimatedBill > 0
             ? `$${estimatedBill.toFixed(2)} penalty`
             : (!isOnline ? 'In Grace Period' : undefined);
 
           return (
             <ParcelCard
-              key={card.id}
-              id={card.id.toString()}
-              cardNumber={card.cardNumber}
+              key={card.cardId}
+              id={card.cardId.toString()}
+              cardNumber={card.cardId.toString()} // Fallback if ownerName not shown
               status={isOnline ? 'In Store' : 'Outside'}
               penalty={penaltyText}
+              onRemove={() => {
+                import('react-native').then(({ Alert }) => {
+                  Alert.alert(
+                    'Remove Card',
+                    `Are you sure you want to unregister Card #${card.cardId}?`,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Remove', style: 'destructive', onPress: () => unregisterCard(card.cardId) },
+                    ]
+                  );
+                });
+              }}
             />
           );
         })}
 
-        {KNOWN_CARDS.length === 0 && (
-          <Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>No cards configured.</Text>
+        {cards.length === 0 && (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Text style={{ textAlign: 'center', color: '#888', fontSize: 16 }}>No cards registered yet.</Text>
+            <Text style={{ textAlign: 'center', color: '#AAA', fontSize: 12, marginTop: 8 }}>Go to the Add tab to register your first card.</Text>
+          </View>
         )}
 
-        <View style={{ marginTop: 20, padding: 10, backgroundColor: isOfflineMode ? 'rgba(255,165,0,0.15)' : 'rgba(0,0,0,0.05)', borderRadius: 8 }}>
-          {isOfflineMode && (
-            <Text style={{ textAlign: 'center', color: Colors.warning, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>
-              📱 Demo Mode
-            </Text>
-          )}
-          <Text style={{ textAlign: 'center', color: isOfflineMode ? Colors.warning : '#666', fontSize: 12 }}>
+        <View style={{ marginTop: 20, padding: 10, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 8 }}>
+          <Text style={{ textAlign: 'center', color: '#666', fontSize: 12 }}>
             {isConnected
               ? 'Connected to Gateway'
-              : (isOfflineMode
-                ? 'Showing sample data - Connect to ESP32 for live tracking'
-                : 'Connecting to Gateway...')}
+              : 'Connecting to Gateway...'}
           </Text>
           {lastUpdated && (
             <Text style={{ textAlign: 'center', color: '#888', fontSize: 10, marginTop: 4 }}>

@@ -30,16 +30,20 @@ const formatDuration = (minutes: number): string => {
 };
 
 export default function HistoryScreen() {
-    const { history, clearHistory } = useBilling();
+    const { cardSessions, history, clearHistory } = useBilling();
+
+    const filteredHistory = useMemo(() => {
+        return history.filter(event => cardSessions[event.cardId] !== undefined);
+    }, [history, cardSessions]);
 
     // Calculate stats
     const stats = useMemo(() => {
-        const totalEvents = history.length;
-        const totalPenalties = history
+        const totalEvents = filteredHistory.length;
+        const totalPenalties = filteredHistory
             .filter(e => e.type === 'returned' && e.penalty)
             .reduce((sum, e) => sum + (e.penalty || 0), 0);
         return { totalEvents, totalPenalties };
-    }, [history]);
+    }, [filteredHistory]);
 
     const renderHistoryItem = (event: HistoryEvent) => {
         const isLeft = event.type === 'left';
@@ -126,7 +130,7 @@ export default function HistoryScreen() {
                     )}
                 </View>
 
-                {history.length === 0 ? (
+                {filteredHistory.length === 0 ? (
                     <View style={styles.emptyState}>
                         <Clock size={48} color={Colors.textSecondary} />
                         <Text style={styles.emptyTitle}>No Activity Yet</Text>
@@ -135,7 +139,7 @@ export default function HistoryScreen() {
                         </Text>
                     </View>
                 ) : (
-                    history.map(renderHistoryItem)
+                    filteredHistory.map(renderHistoryItem)
                 )}
             </ScrollView>
         </View>
@@ -280,4 +284,3 @@ const styles = StyleSheet.create({
         paddingHorizontal: 32,
     },
 });
-

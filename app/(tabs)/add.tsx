@@ -2,13 +2,32 @@ import { Colors } from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CreditCard, Plus, User } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { Theme } from '@/constants/Theme';
+import { useBilling } from '@/context/BillingContext';
 
 export default function AddScreen() {
     const [cardNumber, setCardNumber] = useState('');
     const [ownerName, setOwnerName] = useState('');
+    const { registerCard } = useBilling();
+
+    const handleRegister = async () => {
+        const id = parseInt(cardNumber, 10);
+        if (isNaN(id)) {
+            Alert.alert('Error', 'Please enter a valid card number');
+            return;
+        }
+
+        try {
+            await registerCard(id, ownerName || undefined);
+            Alert.alert('Success', `Card ${id} registered successfully!`);
+            setCardNumber('');
+            setOwnerName('');
+        } catch (error) {
+            Alert.alert('Error', 'Failed to register card');
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -61,7 +80,7 @@ export default function AddScreen() {
                         </View>
                     </View>
 
-                    <TouchableOpacity style={styles.submitButton}>
+                    <TouchableOpacity style={styles.submitButton} onPress={handleRegister}>
                         <Plus size={24} color="#FFF" style={{ marginRight: 8 }} />
                         <Text style={styles.submitButtonText}>Register Card</Text>
                     </TouchableOpacity>

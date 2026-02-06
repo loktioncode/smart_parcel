@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Radio } from 'lucide-react-native';
+import { Radio, Trash2 } from 'lucide-react-native';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { Theme } from '../constants/Theme';
 
@@ -10,9 +10,10 @@ interface ParcelCardProps {
     cardNumber: number | string;
     status: 'Outside' | 'In Store';
     penalty?: string;
+    onRemove?: () => void;
 }
 
-export const ParcelCard: React.FC<ParcelCardProps> = ({ cardNumber, status, penalty }) => {
+export const ParcelCard: React.FC<ParcelCardProps> = ({ cardNumber, status, penalty, onRemove }) => {
     const isInStore = status === 'In Store';
     const statusColor = isInStore ? Colors.success : Colors.error;
 
@@ -42,9 +43,14 @@ export const ParcelCard: React.FC<ParcelCardProps> = ({ cardNumber, status, pena
                 )}
             </View>
 
-            {/* Connectivity Icon */}
+            {/* Connectivity Icon & Delete */}
             <View style={styles.iconContainer}>
-                <Radio size={24} color={statusColor} />
+                <Radio size={24} color={statusColor} style={{ marginBottom: 12 }} />
+                {onRemove && (
+                    <TouchableOpacity onPress={onRemove} style={styles.removeButton}>
+                        <Trash2 size={20} color={Colors.textSecondary} />
+                    </TouchableOpacity>
+                )}
             </View>
         </View>
     );
@@ -111,6 +117,10 @@ const styles = StyleSheet.create({
     },
     iconContainer: {
         paddingRight: 8,
+        alignItems: 'center',
+    },
+    removeButton: {
+        padding: 4,
     },
 });
 

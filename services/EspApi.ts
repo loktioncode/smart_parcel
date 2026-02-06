@@ -10,13 +10,6 @@ export interface EspResponse {
     cards: CardStatus[];
 }
 
-// Static demo data for offline/demo mode
-export const DEMO_CARDS: CardStatus[] = [
-    { id: 1, last_seen_ms_ago: 500 },
-    { id: 2, last_seen_ms_ago: 1200 },
-    { id: 3, last_seen_ms_ago: 95000 }, // This one appears "outside" (offline for 45s)
-];
-
 // Connection status tracking
 let connectionAttempts = 0;
 let lastSuccessfulConnection: Date | null = null;
@@ -32,7 +25,7 @@ export const fetchActiveCards = async (): Promise<FetchResult> => {
 
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
         const response = await fetch(ESP_API_URL, {
             signal: controller.signal,
@@ -56,13 +49,11 @@ export const fetchActiveCards = async (): Promise<FetchResult> => {
     } catch (error) {
         console.log('Error fetching from ESP32:', error);
 
-        // After 3 failed attempts, switch to demo mode
-        const isOfflineMode = connectionAttempts >= 3;
-
+        // Always return empty list when disconnected - no more mock data
         return {
-            cards: isOfflineMode ? DEMO_CARDS : [],
+            cards: [],
             isConnected: false,
-            isOfflineMode,
+            isOfflineMode: false,
         };
     }
 };

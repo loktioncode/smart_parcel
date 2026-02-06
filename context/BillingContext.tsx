@@ -8,9 +8,9 @@ interface BillingSettings {
 
 interface CardSession {
     cardId: number;
+    ownerName?: string;
     offlineSince: number | null; // Timestamp (ms) when card went offline. Null if online.
     currentBill: number; // Accumulated bill for CLOSED sessions (if we want history), or just transient?
-    // Actually, for "current status", we just need offlineSince.
 }
 
 // History event for tracking when cards leave and return
@@ -28,6 +28,8 @@ interface BillingContextType {
     updateSettings: (newSettings: Partial<BillingSettings>) => Promise<void>;
     cardSessions: Record<number, CardSession>;
     handleCardStatusChange: (cardId: number, isOnline: boolean) => void;
+    registerCard: (cardId: number, ownerName?: string) => Promise<void>;
+    unregisterCard: (cardId: number) => Promise<void>;
     getEstimatedBill: (cardId: number) => number;
     history: HistoryEvent[];
     clearHistory: () => Promise<void>;
@@ -96,9 +98,36 @@ export const BillingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         await AsyncStorage.removeItem('billing_history');
     };
 
+    const registerCard = async (cardId: number, ownerName?: string) => {
+        const now = Date.now();
+        const newSessions = {
+            ...cardSessions,
+            [cardId]: {
+                cardId,
+                ownerName,
+                offlineSince: null,
+                currentBill: 0,
+            }
+        };
+        await saveSessions(newSessions);
+
+        await addHistoryEvent({
+            cardId,
+            type: 'registered',
+            timestamp: now,
+        });
+    };
+
+    const unregisterCard = async (cardId: number) => {
+        const newSessions = { ...cardSessions };
+        delete newSessions[cardId];
+        await saveSessions(newSessions);
+    };
+
     const handleCardStatusChange = (cardId: number, isOnline: boolean) => {
         setCardSessions(prev => {
-            const currentSession = prev[cardId] || { cardId, offlineSince: null, currentBill: 0 };
+            const currentSession = prev[cardId];
+            if (!currentSession) return prev; // Ignore status changes for unregistered cards
 
             if (isOnline) {
                 // Card is now ONLINE (In Store)
@@ -162,7 +191,17 @@ export const BillingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     return (
-        <BillingContext.Provider value={{ settings, updateSettings, cardSessions, handleCardStatusChange, getEstimatedBill, history, clearHistory }}>
+        <BillingContext.Provider value={{
+            settings,
+            updateSettings,
+            cardSessions,
+            handleCardStatusChange,
+            registerCard,
+            unregisterCard,
+            getEstimatedBill,
+            history,
+            clearHistory
+        }}>
             {children}
         </BillingContext.Provider>
     );

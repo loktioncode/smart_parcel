@@ -21,10 +21,12 @@ export function usePresence(knownCardIds: number[] = []) {
                 setIsOfflineMode(result.isOfflineMode);
 
                 if (result.cards.length > 0) {
-                    // Filter cards that were seen recently (within 5 seconds)
+                    // Filter cards that were seen recently (within 60 seconds)
+                    // AND ensure they are part of our known card list
                     currentOnlineIds = result.cards
-                        .filter(c => c.last_seen_ms_ago < 5000)
-                        .map(c => c.id);
+                        .filter(c => c.last_seen_ms_ago < 60000)
+                        .map(c => c.id)
+                        .filter(id => knownCardIds.includes(id));
                     setOnlineCards(currentOnlineIds);
                 } else {
                     setOnlineCards([]);
